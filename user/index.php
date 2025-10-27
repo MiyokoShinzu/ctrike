@@ -1,3 +1,4 @@
+
 <?php include "./globals/head.php"; ?>
 
 <head>
@@ -73,7 +74,9 @@
         <div class="row mb-4">
             <div class="col-12">
                 <div class="card shadow-sm p-3 text-center">
-                    <h3 id="greeting" class="text-primary mb-1"></h3>
+                    <h3 id="greeting" class="text-primary mb-1">
+                        <?php echo "Welcome back " . $_SESSION['fullname']; ?>
+                    </h3>
                     <p class="text-muted mb-0">Here’s a quick overview of your vehicle’s current health.</p>
                 </div>
             </div>
@@ -92,24 +95,7 @@
     <script>
         // 🧠 Display user greeting using email from localStorage
         document.addEventListener("DOMContentLoaded", () => {
-            const email = localStorage.getItem("email") || "User";
-
-            // Optionally, display only the part before '@'
-            const namePart = email.includes("@") ? email.split("@")[0] : email;
-            console.log(namePart);
-
-            const hour = new Date().getHours();
-            let greetingText = "";
-
-            if (hour < 12) {
-                greetingText = `Good Morning, ${email}!`;
-            } else if (hour < 18) {
-                greetingText = `Good Afternoon, ${email}!`;
-            } else {
-                greetingText = `Good Evening, ${email}!`;
-            }
-
-            document.getElementById("greeting").textContent = greetingText;
+           
 
             // Fetch telemetry data after greeting is displayed
             fetch("./telemetry_data.php")
