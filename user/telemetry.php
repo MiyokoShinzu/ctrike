@@ -25,7 +25,8 @@
             background: #fff;
         }
 
-        h3, h5 {
+        h3,
+        h5 {
             color: var(--primary);
             font-weight: bold;
             text-transform: uppercase;
@@ -66,7 +67,7 @@
             width: calc(100% - 250px);
         }
 
-        .sidebar.collapsed + #main {
+        .sidebar.collapsed+#main {
             margin-left: 80px;
             width: calc(100% - 80px);
         }
@@ -129,6 +130,16 @@
                     <span id="tireMetric" class="metric-value">--</span>
                 </div>
             </div>
+
+            <!-- 🔧 New Card for Installation Setup -->
+            <div class="col-md-2 mb-2">
+                <div class="card card-metric text-center p-3">
+                    <h6 class="metric-label">Setup</h6>
+                    <button class="btn btn-primary btn-sm mt-2" data-bs-toggle="modal" data-bs-target="#setupModal">
+                        Configure
+                    </button>
+                </div>
+            </div>
         </div>
 
         <!-- Date Picker -->
@@ -162,6 +173,93 @@
         </div>
     </div>
 
+    <!-- 🧩 Setup Modal -->
+    <div class="modal fade" id="setupModal" tabindex="-1" aria-labelledby="setupModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header bg-primary text-white">
+                    <h5 class="modal-title" id="setupModalLabel">Component Installation Setup</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="setupForm">
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label class="form-label">Motor Installation Date</label>
+                                <input type="date" name="motor_date" class="form-control">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Motor Condition</label>
+                                <select name="motor_condition" class="form-select">
+                                    <option value="brand_new">Brand New</option>
+                                    <option value="second_hand">Second Hand</option>
+                                </select>
+                            </div>
+
+                            <div class="col-md-6">
+                                <label class="form-label">Battery Installation Date</label>
+                                <input type="date" name="battery_date" class="form-control">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Battery Condition</label>
+                                <select name="battery_condition" class="form-select">
+                                    <option value="brand_new">Brand New</option>
+                                    <option value="second_hand">Second Hand</option>
+                                </select>
+                            </div>
+
+                            <h6 class="mt-4 text-primary fw-bold">Tires</h6>
+
+                            <!-- Rear Tire -->
+                            <div class="col-md-6">
+                                <label class="form-label">Rear Tire Installation Date</label>
+                                <input type="date" name="rear_tire_date" class="form-control">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Rear Tire Condition</label>
+                                <select name="rear_tire_condition" class="form-select">
+                                    <option value="brand_new">Brand New</option>
+                                    <option value="second_hand">Second Hand</option>
+                                </select>
+                            </div>
+
+                            <!-- Side Tire -->
+                            <div class="col-md-6">
+                                <label class="form-label">Side Tire Installation Date</label>
+                                <input type="date" name="side_tire_date" class="form-control">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Side Tire Condition</label>
+                                <select name="side_tire_condition" class="form-select">
+                                    <option value="brand_new">Brand New</option>
+                                    <option value="second_hand">Second Hand</option>
+                                </select>
+                            </div>
+
+                            <!-- Front Tire -->
+                            <div class="col-md-6">
+                                <label class="form-label">Front Tire Installation Date</label>
+                                <input type="date" name="front_tire_date" class="form-control">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Front Tire Condition</label>
+                                <select name="front_tire_condition" class="form-select">
+                                    <option value="brand_new">Brand New</option>
+                                    <option value="second_hand">Second Hand</option>
+                                </select>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                    <button type="button" class="btn btn-primary" id="saveSetup">Save</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <?php include "./globals/scripts.php"; ?>
 
     <script>
@@ -173,7 +271,10 @@
             $.ajax({
                 url: '../api/user_fetch_telemetry_data.php',
                 method: 'GET',
-                data: { start: selectedDate, end: selectedDate },
+                data: {
+                    start: selectedDate,
+                    end: selectedDate
+                },
                 dataType: 'json',
                 success: function(data) {
                     renderAllCharts(data);
@@ -186,9 +287,22 @@
         }
 
         function renderAllCharts(data) {
-            const configs = [
-                { key: 'battery', label: 'Battery Voltage (V)', color: 'rgb(174,14,14)', unit: 'V', min: 30, max: 72 },
-                { key: 'vibration', label: 'Motor Vibration (Hz)', color: 'rgb(14,14,174)', unit: 'Hz', min: 25, max: 100 },
+            const configs = [{
+                    key: 'battery',
+                    label: 'Battery Voltage (V)',
+                    color: 'rgb(174,14,14)',
+                    unit: 'V',
+                    min: 30,
+                    max: 72
+                },
+                {
+                    key: 'vibration',
+                    label: 'Motor Vibration (Hz)',
+                    color: 'rgb(14,14,174)',
+                    unit: 'Hz',
+                    min: 25,
+                    max: 100
+                },
             ];
 
             configs.forEach(cfg => {
@@ -213,7 +327,13 @@
                     options: {
                         responsive: true,
                         maintainAspectRatio: false,
-                        scales: { y: { min: cfg.min, max: cfg.max, beginAtZero: false } }
+                        scales: {
+                            y: {
+                                min: cfg.min,
+                                max: cfg.max,
+                                beginAtZero: false
+                            }
+                        }
                     }
                 });
 
@@ -227,12 +347,23 @@
         }
 
         function updateMetrics(data) {
-            $('#batteryMetric').text(data.battery?.at(-1) ? `${data.battery.at(-1)} V` : '--');
-            $('#vibrationMetric').text(data.vibration?.at(-1) ? `${data.vibration.at(-1)} Hz` : '--');
-            $('#temperatureMetric').text(data.temperature?.at(-1) ? `${data.temperature.at(-1)} °C` : '--');
-            $('#mileageMetric').text(data.speed?.at(-1) ? `${data.speed.at(-1)} km/h` : '--');
-            $('#tireMetric').text(data.tire?.at(-1) ? `${data.tire.at(-1)} PSI` : '--');
+            $('#batteryMetric').text(data.battery?.at(-1) ? `${data.battery.at(-1).toFixed(2)} V` : '--');
+            $('#vibrationMetric').text(data.vibration?.at(-1) ? `${data.vibration.at(-1).toFixed(2)} Hz` : '--');
+            $('#temperatureMetric').text(data.temperature?.at(-1) ? `${data.temperature.at(-1).toFixed(2)} °C` : '--');
+            $('#mileageMetric').text(data.speed?.at(-1) ? `${data.speed.at(-1).toFixed(2)} km/h` : '--');
+            $('#tireMetric').text(data.tire?.at(-1) ? `${data.tire.at(-1).toFixed(2)} PSI` : '--');
         }
+
+        // Save setup modal
+        $('#saveSetup').click(function() {
+            const formData = $('#setupForm').serialize();
+            $.post('../api/save_installation_setup.php', formData, function(response) {
+                alert('Setup saved successfully!');
+                $('#setupModal').modal('hide');
+            }).fail(function() {
+                alert('Error saving setup.');
+            });
+        });
 
         $(document).ready(function() {
             loadTelemetryData();
@@ -240,4 +371,5 @@
         });
     </script>
 </body>
+
 </html>
