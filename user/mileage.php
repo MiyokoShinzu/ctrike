@@ -98,29 +98,29 @@
             </div>
             <div class="col-md-3 mb-2">
                 <div class="card text-center p-3 shadow-sm h-100">
-                    <h6>Average per Trip</h6>
+                    <h6>Average per Hour</h6>
                     <span id="avgMileage" class="fs-4 text-primary">0 km</span>
                 </div>
             </div>
             <div class="col-md-3 mb-2">
                 <div class="card text-center p-3 shadow-sm h-100">
-                    <h6>Trips This Week</h6>
+                    <h6>Data Points</h6>
                     <span id="tripsWeek" class="fs-4 text-primary">0</span>
                 </div>
             </div>
             <div class="col-md-3 mb-2">
                 <div class="card text-center p-3 shadow-sm h-100">
-                    <h6>Max Daily Mileage</h6>
+                    <h6>Max Reading</h6>
                     <span id="maxTrip" class="fs-4 text-primary">0 km</span>
                 </div>
             </div>
         </div>
 
-        <!-- Week Selector -->
+        <!-- Date Selector -->
         <div class="row mb-3">
             <div class="col-md-3">
-                <label for="weekPicker" class="form-label fw-bold text-primary">Select Week:</label>
-                <input type="week" id="weekPicker" class="form-control" value="2025-W43">
+                <label for="datePicker" class="form-label fw-bold text-primary">Select Date:</label>
+                <input type="date" id="datePicker" class="form-control" value="<?php echo date('Y-m-d'); ?>">
             </div>
         </div>
 
@@ -129,7 +129,7 @@
             <div class="col-12">
                 <div class="card shadow-sm p-3">
                     <div class="chart-header">
-                        <h5 id="chartTitle" class="text-primary mb-0">Mileage per Day (km)</h5>
+                        <h5 id="chartTitle" class="text-primary mb-0">Mileage per Hour (km)</h5>
                         <button class="btn btn-outline-primary btn-sm" id="toggleChartType">Switch to Line</button>
                     </div>
                     <canvas id="mileageChart"></canvas>
@@ -144,19 +144,6 @@
         const ctx = document.getElementById('mileageChart').getContext('2d');
         let mileageChart = null;
         let chartType = 'bar';
-
-        // Helper: Convert week string to start and end date
-        function getWeekDates(weekString) {
-            const [year, week] = weekString.split('-W').map(Number);
-            const firstDay = new Date(year, 0, 1 + (week - 1) * 7);
-            const dayOfWeek = firstDay.getDay();
-            const monday = new Date(firstDay);
-            monday.setDate(firstDay.getDate() - ((dayOfWeek + 6) % 7));
-            const sunday = new Date(monday);
-            sunday.setDate(monday.getDate() + 6);
-            const format = d => d.toISOString().split('T')[0];
-            return { start: format(monday), end: format(sunday) };
-        }
 
         function createChart(type, labels, data) {
             return new Chart(ctx, {
@@ -175,12 +162,7 @@
                 options: {
                     responsive: true,
                     maintainAspectRatio: false,
-                    scales: {
-                        y: {
-                            beginAtZero: true,
-                            max: 1000
-                        }
-                    }
+                    scales: { y: { beginAtZero: true, max: 100 } }
                 }
             });
         }
@@ -200,14 +182,13 @@
             mileageChart = createChart(chartType, data.labels, data.mileage);
         }
 
-        function loadMileageData(weekValue) {
-            const { start, end } = getWeekDates(weekValue);
-            $('#chartTitle').text(`Mileage per Day (km) — ${start} to ${end}`);
+        function loadMileageData(selectedDate) {
+            $('#chartTitle').text(`Mileage Readings for ${selectedDate}`);
 
             $.ajax({
                 url: `../api/user_fetch_mileage.php`,
                 method: "GET",
-                data: { start: start, end: end },
+                data: { start: selectedDate, end: selectedDate },
                 dataType: "json",
                 success: function (response) {
                     updateDashboard(response);
@@ -221,18 +202,16 @@
         $('#toggleChartType').on('click', function () {
             chartType = chartType === 'bar' ? 'line' : 'bar';
             $(this).text(chartType === 'bar' ? 'Switch to Line' : 'Switch to Bar');
-            loadMileageData($('#weekPicker').val());
+            loadMileageData($('#datePicker').val());
         });
 
-        $('#weekPicker').on('change', function () {
+        $('#datePicker').on('change', function () {
             loadMileageData($(this).val());
         });
 
-        // Initialize
         $(document).ready(() => {
-            loadMileageData($('#weekPicker').val());
+            loadMileageData($('#datePicker').val());
         });
     </script>
 </body>
-
 </html>
