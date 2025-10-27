@@ -52,7 +52,7 @@
 			</div>
 			<div class="col-lg-9 mb-3  p-3">
 				<div class="row">
-					<div class="col-6 border">
+					<div class="col-6 ">
 						<h4 class="border-0 border-bottom border-secondary border-3 p-3">Battery</h4>
 						<div class="row  gx-1 mt-3">
 
