@@ -87,11 +87,11 @@
 			</div>
 		</div>
 
-		<!-- Week Selector -->
+		<!-- Date Selector -->
 		<div class="row mb-3">
 			<div class="col-md-3">
-				<label for="weekPicker" class="form-label fw-bold text-primary">Select Week:</label>
-				<input type="week" id="weekPicker" class="form-control" value="2025-W43">
+				<label for="datePicker" class="form-label fw-bold text-primary">Select Date:</label>
+				<input type="date" id="datePicker" class="form-control" value="<?= date('Y-m-d') ?>">
 			</div>
 		</div>
 
@@ -100,7 +100,7 @@
 			<div class="col-12">
 				<div class="card shadow-sm p-3">
 					<div class="chart-header">
-						<h5 id="chartTitle" class="text-primary mb-0">Motor Vibration per Day (Hz)</h5>
+						<h5 id="chartTitle" class="text-primary mb-0">Motor Vibration (Hz) — <?= date('Y-m-d') ?></h5>
 						<button class="btn btn-outline-primary btn-sm" id="toggleChartType">Switch to Line</button>
 					</div>
 					<canvas id="vibrationChart"></canvas>
@@ -157,7 +157,7 @@
 			}
 
 			function updateDashboard(data) {
-				const days = data.labels || [];
+				const timeLabels = data.labels || [];
 				const vibrationData = data.vibration || [];
 
 				const avg = vibrationData.length ? vibrationData.reduce((a, b) => a + b, 0) / vibrationData.length : 0;
@@ -172,35 +172,16 @@
 					.addClass(getColorClass(status));
 
 				if (vibrationChart) vibrationChart.destroy();
-				vibrationChart = createChart(chartType, days, vibrationData);
+				vibrationChart = createChart(chartType, timeLabels, vibrationData);
 			}
 
-			function getDateRangeFromWeek(weekString) {
-				const [year, weekNum] = weekString.split('-W').map(Number);
-				const monday = new Date(year, 0, (weekNum - 1) * 7 + 1);
-				while (monday.getDay() !== 1) monday.setDate(monday.getDate() - 1);
-				const sunday = new Date(monday);
-				sunday.setDate(monday.getDate() + 6);
-				return {
-					start: monday.toISOString().split('T')[0],
-					end: sunday.toISOString().split('T')[0]
-				};
-			}
-
-			function loadWeekData(weekValue) {
-				const {
-					start,
-					end
-				} = getDateRangeFromWeek(weekValue);
-				$('#chartTitle').text(`Motor Vibration per Day (Hz) — ${start} to ${end}`);
+			function loadDailyData(selectedDate) {
+				$('#chartTitle').text(`Motor Vibration (Hz) — ${selectedDate}`);
 
 				$.ajax({
 					url: '../api/user_fetch_motor_vibration.php',
 					method: 'GET',
-					data: {
-						start,
-						end
-					},
+					data: { date: selectedDate },
 					dataType: 'json',
 					success: updateDashboard,
 					error: function(xhr, status, error) {
@@ -212,18 +193,17 @@
 			$('#toggleChartType').on('click', function() {
 				chartType = chartType === 'bar' ? 'line' : 'bar';
 				$(this).text(chartType === 'bar' ? 'Switch to Line' : 'Switch to Bar');
-				loadWeekData($('#weekPicker').val());
+				loadDailyData($('#datePicker').val());
 			});
 
-			$('#weekPicker').on('change', function() {
-				loadWeekData($(this).val());
+			$('#datePicker').on('change', function() {
+				loadDailyData($(this).val());
 			});
 
 			// Initial load
-			loadWeekData($('#weekPicker').val());
+			loadDailyData($('#datePicker').val());
 		});
 	</script>
-
 </body>
 
 </html>

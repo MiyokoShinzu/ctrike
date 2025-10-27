@@ -1,24 +1,23 @@
 <?php
 header('Content-Type: application/json');
-include '../src/connection.php'; // adjust path if needed
+include '../src/connection.php';
 
-if (!isset($_GET['start']) || !isset($_GET['end'])) {
-	echo json_encode(['error' => 'Missing start or end date']);
+if (!isset($_GET['date'])) {
+	echo json_encode(['error' => 'Missing date']);
 	exit;
 }
 
-$start = $_GET['start'];
-$end = $_GET['end'];
+$date = $_GET['date'];
 
-// Prepare query: fetch average vibration per day
+// Query: fetch average vibration every hour of the selected day
 $query = "
     SELECT 
-        DATE(datetime_received) AS date_label,
+        DATE_FORMAT(datetime_received, '%H:00') AS hour_label,
         ROUND(AVG(vibration), 2) AS avg_vibration
     FROM telemetry_data
-    WHERE DATE(datetime_received) BETWEEN ? AND ?
-    GROUP BY DATE(datetime_received)
-    ORDER BY DATE(datetime_received) ASC
+    WHERE DATE(datetime_received) = ?
+    GROUP BY HOUR(datetime_received)
+    ORDER BY HOUR(datetime_received)
 ";
 
 $stmt = $mysqli->prepare($query);
@@ -27,7 +26,7 @@ if (!$stmt) {
 	exit;
 }
 
-$stmt->bind_param("ss", $start, $end);
+$stmt->bind_param("s", $date);
 $stmt->execute();
 $result = $stmt->get_result();
 
@@ -35,7 +34,7 @@ $labels = [];
 $vibration = [];
 
 while ($row = $result->fetch_assoc()) {
-	$labels[] = $row['date_label'];
+	$labels[] = $row['hour_label'];
 	$vibration[] = (float)$row['avg_vibration'];
 }
 
