@@ -79,6 +79,8 @@
             padding: 4px 10px;
         }
     </style>
+
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 
@@ -86,7 +88,6 @@
     <?php include "./globals/navbar.php"; ?>
 
     <div id="main" class="container-fluid py-4 mt-5">
-
         <!-- Top Mileage Metrics -->
         <div class="row mb-4">
             <div class="col-md-3 mb-2">
@@ -123,7 +124,7 @@
             </div>
         </div>
 
-        <!-- Mileage Graph -->
+        <!-- Mileage Chart -->
         <div class="row mb-4">
             <div class="col-12">
                 <div class="card shadow-sm p-3">
@@ -141,11 +142,10 @@
 
     <script>
         const ctx = document.getElementById('mileageChart').getContext('2d');
-        let mileageChart;
+        let mileageChart = null;
         let chartType = 'bar';
-        let telemetryData = null;
 
-        // Convert week input (YYYY-Wxx) to start and end date
+        // Helper: Convert week string to start and end date
         function getWeekDates(weekString) {
             const [year, week] = weekString.split('-W').map(Number);
             const firstDay = new Date(year, 0, 1 + (week - 1) * 7);
@@ -155,53 +155,17 @@
             const sunday = new Date(monday);
             sunday.setDate(monday.getDate() + 6);
             const format = d => d.toISOString().split('T')[0];
-            return {
-                start: format(monday),
-                end: format(sunday)
-            };
+            return { start: format(monday), end: format(sunday) };
         }
 
-        async function fetchTelemetryData(weekString = "2025-W43") {
-            const {
-                start,
-                end
-            } = getWeekDates(weekString);
-            const url = `./telemetry_data.php?start=${start}&end=${end}`;
-            const response = await fetch(url);
-            telemetryData = await response.json();
-            updateAll();
-        }
-
-        function calculateMileage() {
-            return telemetryData.speed.map((v, i) => v * telemetryData.time[i]);
-        }
-
-        function updateAll() {
-            const mileage = calculateMileage();
-            renderStats(mileage);
-            renderChart(mileage);
-        }
-
-        function renderStats(mileage) {
-            const total = mileage.reduce((a, b) => a + b, 0);
-            const avg = total / mileage.length;
-            const max = Math.max(...mileage);
-
-            document.getElementById('totalMileage').textContent = `${total.toFixed(1)} km`;
-            document.getElementById('avgMileage').textContent = `${avg.toFixed(1)} km`;
-            document.getElementById('tripsWeek').textContent = mileage.length;
-            document.getElementById('maxTrip').textContent = `${max.toFixed(1)} km`;
-        }
-
-        function renderChart(mileage) {
-            if (mileageChart) mileageChart.destroy();
-            mileageChart = new Chart(ctx, {
-                type: chartType,
+        function createChart(type, labels, data) {
+            return new Chart(ctx, {
+                type: type,
                 data: {
-                    labels: telemetryData.labels,
+                    labels: labels,
                     datasets: [{
                         label: 'Mileage (km)',
-                        data: mileage,
+                        data: data,
                         backgroundColor: 'rgba(174,14,14,0.6)',
                         borderColor: 'rgb(174,14,14)',
                         fill: true,
@@ -214,34 +178,60 @@
                     scales: {
                         y: {
                             beginAtZero: true,
-                            min: 0,
-                            max: 1000, // max possible mileage
-                            ticks: {
-                                stepSize: 100 // optional for readability
-                            }
+                            max: 1000
                         }
                     }
                 }
             });
         }
 
-        // Chart type toggle
-        document.getElementById('toggleChartType').addEventListener('click', () => {
+        function updateDashboard(data) {
+            const total = data.mileage.reduce((a, b) => a + b, 0);
+            const avg = total / data.mileage.length;
+            const max = Math.max(...data.mileage);
+            const trips = data.mileage.length;
+
+            $('#totalMileage').text(`${total.toFixed(1)} km`);
+            $('#avgMileage').text(`${avg.toFixed(1)} km`);
+            $('#maxTrip').text(`${max.toFixed(1)} km`);
+            $('#tripsWeek').text(trips);
+
+            if (mileageChart) mileageChart.destroy();
+            mileageChart = createChart(chartType, data.labels, data.mileage);
+        }
+
+        function loadMileageData(weekValue) {
+            const { start, end } = getWeekDates(weekValue);
+            $('#chartTitle').text(`Mileage per Day (km) — ${start} to ${end}`);
+
+            $.ajax({
+                url: `../api/user_fetch_mileage.php`,
+                method: "GET",
+                data: { start: start, end: end },
+                dataType: "json",
+                success: function (response) {
+                    updateDashboard(response);
+                },
+                error: function (xhr, status, error) {
+                    console.error("Error fetching data:", error);
+                }
+            });
+        }
+
+        $('#toggleChartType').on('click', function () {
             chartType = chartType === 'bar' ? 'line' : 'bar';
-            document.getElementById('toggleChartType').textContent =
-                chartType === 'bar' ? 'Switch to Line' : 'Switch to Bar';
-            updateAll();
+            $(this).text(chartType === 'bar' ? 'Switch to Line' : 'Switch to Bar');
+            loadMileageData($('#weekPicker').val());
         });
 
-        // Week selector change
-        document.getElementById('weekPicker').addEventListener('change', (e) => {
-            const week = e.target.value;
-            document.getElementById('chartTitle').textContent = `Mileage per Day (km) — ${week}`;
-            fetchTelemetryData(week);
+        $('#weekPicker').on('change', function () {
+            loadMileageData($(this).val());
         });
 
         // Initialize
-        fetchTelemetryData();
+        $(document).ready(() => {
+            loadMileageData($('#weekPicker').val());
+        });
     </script>
 </body>
 

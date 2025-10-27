@@ -110,115 +110,120 @@
 	</div>
 
 	<?php include "./globals/scripts.php"; ?>
-
+	<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 	<script>
-		const ctx = document.getElementById('vibrationChart').getContext('2d');
-		let chartType = 'bar';
-		let vibrationChart = null;
+		$(document).ready(function() {
+			let chartType = 'bar';
+			let vibrationChart = null;
+			const ctx = document.getElementById('vibrationChart').getContext('2d');
 
-		function getStatus(value) {
-			if (value <= 40) return 'Normal';
-			if (value <= 70) return 'Moderate';
-			return 'Warning';
-		}
+			function getStatus(value) {
+				if (value <= 40) return 'Normal';
+				if (value <= 70) return 'Moderate';
+				return 'Warning';
+			}
 
-		function getColorClass(status) {
-			if (status === 'Normal') return 'text-success';
-			if (status === 'Moderate') return 'text-warning';
-			return 'text-danger';
-		}
+			function getColorClass(status) {
+				if (status === 'Normal') return 'text-success';
+				if (status === 'Moderate') return 'text-warning';
+				return 'text-danger';
+			}
 
-		function createChart(type, labels, data) {
-			return new Chart(ctx, {
-				type: type,
-				data: {
-					labels: labels,
-					datasets: [{
-						label: 'Vibration (Hz) [Min: 25, Max: 100]',
-						data: data,
-						backgroundColor: 'rgba(14,14,174,0.6)',
-						borderColor: 'rgb(14,14,174)',
-						fill: true,
-						tension: 0.3
-					}]
-				},
-				options: {
-					responsive: true,
-					maintainAspectRatio: false,
-					scales: {
-						y: {
-							min: 25,
-							max: 100
+			function createChart(type, labels, data) {
+				return new Chart(ctx, {
+					type: type,
+					data: {
+						labels: labels,
+						datasets: [{
+							label: 'Vibration (Hz) [Min: 25, Max: 100]',
+							data: data,
+							backgroundColor: 'rgba(14,14,174,0.6)',
+							borderColor: 'rgb(14,14,174)',
+							fill: true,
+							tension: 0.3
+						}]
+					},
+					options: {
+						responsive: true,
+						maintainAspectRatio: false,
+						scales: {
+							y: {
+								min: 25,
+								max: 100
+							}
 						}
 					}
-				}
+				});
+			}
+
+			function updateDashboard(data) {
+				const days = data.labels || [];
+				const vibrationData = data.vibration || [];
+
+				const avg = vibrationData.length ? vibrationData.reduce((a, b) => a + b, 0) / vibrationData.length : 0;
+				const max = vibrationData.length ? Math.max(...vibrationData) : 0;
+				const status = getStatus(avg);
+
+				$('#avgVibration').text(avg.toFixed(2) + ' Hz');
+				$('#maxVibration').text(max.toFixed(2) + ' Hz');
+				$('#status')
+					.text(status)
+					.removeClass('text-success text-warning text-danger')
+					.addClass(getColorClass(status));
+
+				if (vibrationChart) vibrationChart.destroy();
+				vibrationChart = createChart(chartType, days, vibrationData);
+			}
+
+			function getDateRangeFromWeek(weekString) {
+				const [year, weekNum] = weekString.split('-W').map(Number);
+				const monday = new Date(year, 0, (weekNum - 1) * 7 + 1);
+				while (monday.getDay() !== 1) monday.setDate(monday.getDate() - 1);
+				const sunday = new Date(monday);
+				sunday.setDate(monday.getDate() + 6);
+				return {
+					start: monday.toISOString().split('T')[0],
+					end: sunday.toISOString().split('T')[0]
+				};
+			}
+
+			function loadWeekData(weekValue) {
+				const {
+					start,
+					end
+				} = getDateRangeFromWeek(weekValue);
+				$('#chartTitle').text(`Motor Vibration per Day (Hz) — ${start} to ${end}`);
+
+				$.ajax({
+					url: '../api/user_fetch_motor_vibration.php',
+					method: 'GET',
+					data: {
+						start,
+						end
+					},
+					dataType: 'json',
+					success: updateDashboard,
+					error: function(xhr, status, error) {
+						console.error('Error loading vibration data:', error);
+					}
+				});
+			}
+
+			$('#toggleChartType').on('click', function() {
+				chartType = chartType === 'bar' ? 'line' : 'bar';
+				$(this).text(chartType === 'bar' ? 'Switch to Line' : 'Switch to Bar');
+				loadWeekData($('#weekPicker').val());
 			});
-		}
 
-		function updateDashboard(data) {
-			const days = data.labels;
-			const vibrationData = data.vibration;
+			$('#weekPicker').on('change', function() {
+				loadWeekData($(this).val());
+			});
 
-			const avg = vibrationData.reduce((a, b) => a + b, 0) / vibrationData.length || 0;
-			const max = Math.max(...vibrationData, 0);
-			const status = getStatus(avg);
-
-			document.getElementById('avgVibration').textContent = avg.toFixed(2) + ' Hz';
-			document.getElementById('maxVibration').textContent = max.toFixed(2) + ' Hz';
-			document.getElementById('status').textContent = status;
-			document.getElementById('status').className = 'fs-4 ' + getColorClass(status);
-
-			updateChart(days, vibrationData);
-		}
-
-		function updateChart(days, vibrationData) {
-			if (vibrationChart) vibrationChart.destroy();
-			vibrationChart = createChart(chartType, days, vibrationData);
-		}
-
-		document.getElementById('toggleChartType').addEventListener('click', () => {
-			chartType = chartType === 'bar' ? 'line' : 'bar';
-			document.getElementById('toggleChartType').textContent =
-				chartType === 'bar' ? 'Switch to Line' : 'Switch to Bar';
-			const week = document.getElementById('weekPicker').value;
-			loadWeekData(week);
+			// Initial load
+			loadWeekData($('#weekPicker').val());
 		});
-
-		document.getElementById('weekPicker').addEventListener('change', (e) => {
-			const week = e.target.value;
-			loadWeekData(week);
-		});
-
-		function getDateRangeFromWeek(weekString) {
-			const [year, weekNum] = weekString.split('-W').map(Number);
-			const monday = new Date(year, 0, (weekNum - 1) * 7 + 1);
-			while (monday.getDay() !== 1) monday.setDate(monday.getDate() - 1);
-			const sunday = new Date(monday);
-			sunday.setDate(monday.getDate() + 6);
-
-			return {
-				start: monday.toISOString().split('T')[0],
-				end: sunday.toISOString().split('T')[0]
-			};
-		}
-
-		function loadWeekData(weekValue) {
-			const {
-				start,
-				end
-			} = getDateRangeFromWeek(weekValue);
-			document.getElementById('chartTitle').textContent =
-				`Motor Vibration per Day (Hz) — ${start} to ${end}`;
-
-			fetch(`telemetry_data.php?start=${start}&end=${end}`)
-				.then(res => res.json())
-				.then(updateDashboard)
-				.catch(err => console.error('Error loading data:', err));
-		}
-
-		// Initial load for current week
-		loadWeekData(document.getElementById('weekPicker').value);
 	</script>
+
 </body>
 
 </html>
