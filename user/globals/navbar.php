@@ -56,7 +56,7 @@
                 </li>
 
                 <li class="nav-item">
-                    <a href="predictive_maintenance.php" class="nav-link">
+                    <a href="predictive_maintenance.php" class="nav-link" style="font-size: 0.9em; ">
                         <i class="bi me-2 bi-exclamation-triangle"></i> Predictive Maintenance
                     </a>
                 </li>
