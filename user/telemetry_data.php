@@ -115,3 +115,4 @@ $motorQuery->close();
 $mileageQuery->close();
 $tireQuery->close();
 $mysqli->close();
+?>
