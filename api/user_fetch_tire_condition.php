@@ -9,11 +9,13 @@ if (!isset($_GET['date'])) {
 
 $date = $_GET['date'];
 
-// Query: fetch average vibration every hour of the selected day
+// Fetch hourly average tire pressures for that date
 $query = "
     SELECT 
         DATE_FORMAT(datetime_received, '%H:00') AS hour_label,
-        ROUND(AVG(vibration), 2) AS avg_vibration
+        ROUND(AVG(rear_tire_pressure), 2) AS avg_rear,
+        ROUND(AVG(side_tire_pressure), 2) AS avg_side,
+        ROUND(AVG(front_tire_pressure), 2) AS avg_front
     FROM telemetry_data
     WHERE DATE(datetime_received) = ?
     GROUP BY HOUR(datetime_received)
@@ -31,16 +33,22 @@ $stmt->execute();
 $result = $stmt->get_result();
 
 $labels = [];
-$vibration = [];
+$rear = [];
+$side = [];
+$front = [];
 
 while ($row = $result->fetch_assoc()) {
 	$labels[] = $row['hour_label'];
-	$vibration[] = (float)$row['avg_vibration'];
+	$rear[] = (float)$row['avg_rear'];
+	$side[] = (float)$row['avg_side'];
+	$front[] = (float)$row['avg_front'];
 }
 
 echo json_encode([
 	'labels' => $labels,
-	'vibration' => $vibration
+	'rear' => $rear,
+	'side' => $side,
+	'front' => $front
 ]);
 
 $stmt->close();
