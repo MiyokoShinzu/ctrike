@@ -2,11 +2,13 @@
      <?php
     session_start();
     $contact = $_SESSION['contact'];
+    $vehicle_id = $_SESSION['vehicle_id'];
+    $fullname = $_SESSION['fullname'];
      ?>
     <div id="sidebar" class="sidebar">
         <div class="sidebar-header d-flex align-items-center justify-content-start px-3 py-2">
             <!-- <img src="../assets/coea_logo.png" alt="" class="me-2" style="height: 40px; width: 40px;"> -->
-            <span class="p-2 border-0 border-bottom border-white w-100">Menu  <?php echo $contact?></span>
+            <span class="p-2 border-0 border-bottom border-white w-100">Menu </span>
         </div>
         <nav class="nav flex-column px-3 mt-4">
             <ul class="nav flex-column">
