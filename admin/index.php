@@ -83,6 +83,7 @@
                             <th>Address</th>
                             <th>Vehicle ID</th>
                             <th>Access Level</th>
+                            <th>Actions</th>
                             </tr>
                         </thead>
                         <tbody id="user_table_data"></tbody>
@@ -232,6 +233,7 @@
                 <td>${item.address}</td>
                 <td>${item.vehicle_id}</td>
                 <td>${item.access == 0 ? 'Admin' : 'User'}</td>
+                <td><button id="delete_btn" class="btn btn-danger btn-sm delete_user" data-id="${item.id}"> <i class="bi bi-trash text-white"></i> Delete</button></td>
             </tr>`;
                 })
                 $('#user_table_data').html(text);
@@ -323,6 +325,24 @@
                 })
                 .catch(err => console.error(err));
         });
+    </script>
+    <script>
+        $(document).on('click', '#delete_btn', function(){
+            let id = $(this).attr('data-id');
+
+
+
+            fetch(`../api/admin_delete_user.php?id=${id}`)
+            .then(res => res.json())
+            .then(data => {
+                if(data.success){
+                    alert("Account Successfully Deleted");
+                    location.reload();
+                } else {
+                    alert('Failed: ' + data.message);
+                }
+            })
+        })
     </script>
 
 </body>
