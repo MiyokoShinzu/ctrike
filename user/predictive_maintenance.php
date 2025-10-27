@@ -5,7 +5,7 @@
 <body class="overflow-x-hidden">
 	<?php include "./globals/navbar.php"; ?>
 
-	<div id="main" class="container-fluid">
+	<div id="main" class="container-fluid mt-5">
 		<div class="row">
 			<?php
 			include '../src/connection.php';
