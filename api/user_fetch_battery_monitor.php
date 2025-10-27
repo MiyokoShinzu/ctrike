@@ -2,46 +2,41 @@
 include "../src/connection.php";
 header('Content-Type: application/json');
 
-// Get week range
-$start = $_GET['start'] ?? '';
-$end = $_GET['end'] ?? '';
+// Get selected date
+$date = $_GET['date'] ?? '';
 
-if (!$start || !$end) {
-    echo json_encode(["error" => "Missing start or end date"]);
+if (!$date) {
+    echo json_encode(["error" => "Missing date parameter"]);
     exit;
 }
 
-// Query daily average voltage
+// Query: average voltage grouped by hour for the selected day
 $query = $mysqli->prepare("
     SELECT 
-        DATE(datetime_received) AS date,
+        DATE_FORMAT(datetime_received, '%H:00') AS hour,
         AVG(voltage) AS avg_voltage
     FROM telemetry_data
-    WHERE DATE(datetime_received) BETWEEN ? AND ?
-    GROUP BY DATE(datetime_received)
-    ORDER BY DATE(datetime_received)
+    WHERE DATE(datetime_received) = ?
+    GROUP BY HOUR(datetime_received)
+    ORDER BY HOUR(datetime_received)
 ");
-$query->bind_param("ss", $start, $end);
+$query->bind_param("s", $date);
 $query->execute();
 $result = $query->get_result();
 
 $labels = [];
 $battery = [];
 
+// Collect hourly averages
 while ($row = $result->fetch_assoc()) {
-    $labels[] = $row['date'];
+    $labels[] = $row['hour'];
     $battery[] = round(floatval($row['avg_voltage']), 2);
 }
 
-// Fill empty days (so the chart still displays a week)
+// Fill empty hours (0–23)
 if (empty($labels)) {
-    $period = new DatePeriod(
-        new DateTime($start),
-        new DateInterval('P1D'),
-        (new DateTime($end))->modify('+1 day')
-    );
-    foreach ($period as $date) {
-        $labels[] = $date->format('Y-m-d');
+    for ($h = 0; $h < 24; $h++) {
+        $labels[] = sprintf("%02d:00", $h);
         $battery[] = 0;
     }
 }

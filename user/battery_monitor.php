@@ -104,11 +104,11 @@
 			</div>
 		</div>
 
-		<!-- Week Selector -->
+		<!-- Date Selector -->
 		<div class="row mb-3">
 			<div class="col-md-3">
-				<label for="weekPicker" class="form-label fw-bold text-primary">Select Week:</label>
-				<input type="week" id="weekPicker" class="form-control" value="2025-W42">
+				<label for="datePicker" class="form-label fw-bold text-primary">Select Date:</label>
+				<input type="date" id="datePicker" class="form-control" value="<?= date('Y-m-d') ?>">
 			</div>
 		</div>
 
@@ -117,7 +117,7 @@
 			<div class="col-12">
 				<div class="card shadow-sm p-3">
 					<div class="chart-header">
-						<h5 id="chartTitle" class="text-primary mb-0">Battery Voltage per Day (V)</h5>
+						<h5 id="chartTitle" class="text-primary mb-0">Battery Voltage Readings (V)</h5>
 						<button class="btn btn-outline-primary btn-sm" id="toggleChartType">Switch to Line</button>
 					</div>
 					<canvas id="voltageChart"></canvas>
@@ -140,7 +140,7 @@
 				data: {
 					labels: [],
 					datasets: [{
-						label: 'Voltage (V) [Min: 30, Max: 72]',
+						label: 'Voltage (V)',
 						data: [],
 						backgroundColor: 'rgba(174,14,14,0.6)',
 						borderColor: 'rgb(174,14,14)',
@@ -160,15 +160,6 @@
 					}
 				}
 			});
-		}
-
-		function getDateOfISOWeek(week, year) {
-			const simple = new Date(year, 0, 1 + (week - 1) * 7);
-			const dow = simple.getDay();
-			const ISOweekStart = simple;
-			if (dow <= 4) ISOweekStart.setDate(simple.getDate() - simple.getDay() + 1);
-			else ISOweekStart.setDate(simple.getDate() + 8 - simple.getDay());
-			return ISOweekStart;
 		}
 
 		function getStatus(voltage) {
@@ -198,28 +189,21 @@
 		}
 
 		function updateChart() {
-			voltageChart.data.labels = batteryData.map(d => d.day);
+			voltageChart.data.labels = batteryData.map(d => d.time);
 			voltageChart.data.datasets[0].data = batteryData.map(d => d.voltage);
 			voltageChart.update();
 		}
 
-		function loadBatteryData(week) {
-			const [year, weekNum] = week.split('-W').map(Number);
-			const monday = getDateOfISOWeek(weekNum, year);
-			const sunday = new Date(monday);
-			sunday.setDate(monday.getDate() + 6);
-
-			const start = monday.toISOString().split('T')[0];
-			const end = sunday.toISOString().split('T')[0];
-
-			$.getJSON(`../api/user_fetch_battery_monitor.php?start=${start}&end=${end}`, function (data) {
+		function loadBatteryData(date) {
+			$('#chartTitle').text(`Battery Voltage Readings (V) — ${date}`);
+			$.getJSON(`../api/user_fetch_battery_monitor.php?date=${date}`, function (data) {
 				if (data.error) {
 					console.error(data.error);
 					return;
 				}
 
-				batteryData = data.labels.map((day, i) => ({
-					day,
+				batteryData = data.labels.map((time, i) => ({
+					time,
 					voltage: data.battery[i] ?? 0
 				}));
 
@@ -238,14 +222,12 @@
 			$(this).text(chartType === 'bar' ? 'Switch to Line' : 'Switch to Bar');
 		});
 
-		$('#weekPicker').on('change', function () {
-			const week = $(this).val();
-			$('#chartTitle').text(`Battery Voltage per Day (V) — ${week}`);
-			loadBatteryData(week);
+		$('#datePicker').on('change', function () {
+			loadBatteryData($(this).val());
 		});
 
 		$(document).ready(function () {
-			loadBatteryData($('#weekPicker').val());
+			loadBatteryData($('#datePicker').val());
 		});
 	</script>
 </body>
