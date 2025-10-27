@@ -75,7 +75,7 @@
             <div class="col-12">
                 <div class="card shadow-sm p-3 text-center">
                     <h3 id="greeting" class="text-primary mb-1">
-                        <?php echo "Welcome back " . $_SESSION['fullname'];?>!
+                        <?php echo "Welcome back " . $fullname;?>!
                     </h3>
                     <p class="text-muted mb-0">Here’s a quick overview of your vehicle’s current health.</p>
                 </div>

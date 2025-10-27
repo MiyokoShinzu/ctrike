@@ -1,118 +1,117 @@
-<?php
-header('Content-Type: application/json');
-include '../src/connection.php'; // ✅ your DB connection
+<?php include "./globals/head.php"; ?>
 
-// --- PARAMETERS ---
-$owner_id = 1; // temporary until login
-$week_start = $_GET['start'] ?? '2025-10-20';
-$week_end   = $_GET['end'] ?? '2025-10-26';
+<head>
+    <style>
+        :root {
+            --primary: rgb(174, 14, 14);
+            --primary-light: rgb(220, 60, 60);
+            --background: #fff7f7;
+            --text: #222;
+            --border-radius: 12px;
+            --box-shadow: 0 2px 12px rgba(174, 14, 14, 0.08);
+        }
 
-// --- Fetch battery data ---
-$battery = [];
-$batteryTemp = [];
-$batteryQuery = $mysqli->prepare("
-    SELECT voltage, temperature
-    FROM battery
-    WHERE owner_id = ? 
-    AND recorded_at BETWEEN ? AND ?
-    ORDER BY recorded_at ASC
-");
-$batteryQuery->bind_param("iss", $owner_id, $week_start, $week_end);
-$batteryQuery->execute();
-$batteryResult = $batteryQuery->get_result();
-if ($batteryResult && $batteryResult->num_rows > 0) {
-    while ($row = $batteryResult->fetch_assoc()) {
-        $battery[] = $row['voltage'];
-        $batteryTemp[] = $row['temperature'];
-    }
-}
+        body {
+            background: var(--background);
+            color: var(--text);
+            font-family: 'Poppins', sans-serif;
+        }
 
-// --- Fetch motor data ---
-$vibration = [];
-$motorTemp = [];
-$motorQuery = $mysqli->prepare("
-    SELECT vibration, temperature
-    FROM motor
-    WHERE owner_id = ? 
-    AND recorded_at BETWEEN ? AND ?
-    ORDER BY recorded_at ASC
-");
-$motorQuery->bind_param("iss", $owner_id, $week_start, $week_end);
-$motorQuery->execute();
-$motorResult = $motorQuery->get_result();
-if ($motorResult && $motorResult->num_rows > 0) {
-    while ($row = $motorResult->fetch_assoc()) {
-        $vibration[] = $row['vibration'];
-        $motorTemp[] = $row['temperature'];
-    }
-}
+        .card {
+            border-radius: var(--border-radius);
+            box-shadow: var(--box-shadow);
+            background: #fff;
+        }
 
-// --- Fetch mileage data ---
-$speed = [];
-$travel_time = [];
-$mileageQuery = $mysqli->prepare("
-    SELECT average_speed, travel_time
-    FROM mileage
-    WHERE owner_id = ? 
-    AND recorded_at BETWEEN ? AND ?
-    ORDER BY recorded_at ASC
-");
-$mileageQuery->bind_param("iss", $owner_id, $week_start, $week_end);
-$mileageQuery->execute();
-$mileageResult = $mileageQuery->get_result();
-if ($mileageResult && $mileageResult->num_rows > 0) {
-    while ($row = $mileageResult->fetch_assoc()) {
-        $speed[] = $row['average_speed'];
-        $travel_time[] = $row['travel_time'];
-    }
-}
+        h5 {
+            color: var(--primary);
+            font-weight: bold;
+        }
 
-// --- Fetch tire data ---
-$tire = [];
-$tireQuery = $mysqli->prepare("
-    SELECT pressure
-    FROM tire
-    WHERE owner_id = ? 
-    AND recorded_at BETWEEN ? AND ?
-    ORDER BY recorded_at ASC
-");
-$tireQuery->bind_param("iss", $owner_id, $week_start, $week_end);
-$tireQuery->execute();
-$tireResult = $tireQuery->get_result();
-if ($tireResult && $tireResult->num_rows > 0) {
-    while ($row = $tireResult->fetch_assoc()) {
-        $tire[] = $row['pressure'];
-    }
-}
+        #main {
+            transition: margin-left 0.3s ease, width 0.3s ease;
+            margin-left: 250px;
+            width: calc(100% - 250px);
+        }
 
-// --- Generate labels for 7 days ---
-$labels = [];
-$start = new DateTime($week_start);
-for ($i = 0; $i < 7; $i++) {
-    $labels[] = $start->format('D');
-    $start->modify('+1 day');
-}
+        .sidebar.collapsed+#main {
+            margin-left: 80px;
+            width: calc(100% - 80px);
+        }
 
-// --- Output JSON ---
-echo json_encode([
-    "labels" => $labels,
-    "battery" => $battery,
-    "vibration" => $vibration,
-    "speed" => $speed,
-    "time" => $travel_time,
-    "temperature" => [
-        "battery" => $batteryTemp,
-        "motor" => $motorTemp
-    ],
-    "tire" => $tire,
-    "start" => $week_start,
-    "end" => $week_end
-]);
+        @media (max-width: 991px) {
+            #main {
+                margin-left: 0;
+                width: 100%;
+            }
+        }
 
-// Optional cleanup
-$batteryQuery->close();
-$motorQuery->close();
-$mileageQuery->close();
-$tireQuery->close();
-$mysqli->close();
-?>
+        canvas {
+            height: 250px !important;
+        }
+
+        .chart-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+        }
+    </style>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+
+<body>
+    <?php include "./globals/navbar.php"; ?>
+
+    <div id="main" class="container-fluid py-4 mt-5">
+        <!-- Top Vibration Metrics -->
+        <div class="row mb-4">
+            <div class="col-md-4 mb-2">
+                <div class="card text-center p-3 shadow-sm">
+                    <h6>Average Vibration</h6>
+                    <span id="avgVibration" class="fs-4">-- Hz</span>
+                </div>
+            </div>
+            <div class="col-md-4 mb-2">
+                <div class="card text-center p-3 shadow-sm">
+                    <h6>Max Vibration</h6>
+                    <span id="maxVibration" class="fs-4">-- Hz</span>
+                </div>
+            </div>
+            <div class="col-md-4 mb-2">
+                <div class="card text-center p-3 shadow-sm">
+                    <h6>Status</h6>
+                    <span id="status" class="fs-4 text-success">Normal</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Week Selector -->
+        <div class="row mb-3">
+            <div class="col-md-3">
+                <label for="weekPicker" class="form-label fw-bold text-primary">Select Week:</label>
+                <input type="week" id="weekPicker" class="form-control" value="2025-W43">
+            </div>
+        </div>
+
+        <!-- Vibration Chart -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="card shadow-sm p-3">
+                    <div class="chart-header">
+                        <h5 id="chartTitle" class="text-primary mb-0">Motor Vibration per Day (Hz)</h5>
+                        <button class="btn btn-outline-primary btn-sm" id="toggleChartType">Switch to Line</button>
+                    </div>
+                    <canvas id="vibrationChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <?php include "./globals/scripts.php"; ?>
+
+
+</body>
+
+</html>
