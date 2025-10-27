@@ -26,8 +26,7 @@
 			height: 100%;
 		}
 
-		h3,
-		h5 {
+		h3, h5 {
 			color: var(--primary);
 			font-weight: bold;
 			text-transform: uppercase;
@@ -39,7 +38,7 @@
 			width: calc(100% - 250px);
 		}
 
-		.sidebar.collapsed+#main {
+		.sidebar.collapsed + #main {
 			margin-left: 80px;
 			width: calc(100% - 80px);
 		}
@@ -68,6 +67,7 @@
 			padding: 4px 10px;
 		}
 	</style>
+	<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 	<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 
@@ -129,68 +129,8 @@
 	<?php include "./globals/scripts.php"; ?>
 
 	<script>
-		const weekPicker = document.getElementById('weekPicker');
 		let chartType = 'bar';
 		let batteryData = [];
-
-		async function loadBatteryData(week) {
-			try {
-				const [year, weekNum] = week.split('-W').map(Number);
-				const monday = getDateOfISOWeek(weekNum, year);
-				const sunday = new Date(monday);
-				sunday.setDate(monday.getDate() + 6);
-
-				const start = monday.toISOString().split('T')[0];
-				const end = sunday.toISOString().split('T')[0];
-
-				const response = await fetch(`./telemetry_data.php?start=${start}&end=${end}`);
-				const data = await response.json();
-
-				batteryData = data.labels.map((day, i) => ({
-					day,
-					voltage: data.battery[i] ?? 0
-				}));
-
-				updateMetrics();
-				updateChart();
-			} catch (err) {
-				console.error('Failed to load battery data:', err);
-			}
-		}
-
-		function getDateOfISOWeek(week, year) {
-			const simple = new Date(year, 0, 1 + (week - 1) * 7);
-			const dow = simple.getDay();
-			const ISOweekStart = simple;
-			if (dow <= 4) ISOweekStart.setDate(simple.getDate() - simple.getDay() + 1);
-			else ISOweekStart.setDate(simple.getDate() + 8 - simple.getDay());
-			return ISOweekStart;
-		}
-
-		function getStatus(voltage) {
-			if (voltage >= 60) return 'Normal';
-			if (voltage >= 45) return 'Warning';
-			return 'Critical';
-		}
-
-		function updateMetrics() {
-			const voltages = batteryData.map(d => d.voltage);
-			if (!voltages.length) return;
-
-			const avg = voltages.reduce((a, b) => a + b, 0) / voltages.length;
-			const max = Math.max(...voltages);
-			const min = Math.min(...voltages);
-
-			document.getElementById('avgVoltage').textContent = avg.toFixed(2) + ' V';
-			document.getElementById('maxVoltage').textContent = max.toFixed(2) + ' V';
-			document.getElementById('minVoltage').textContent = min.toFixed(2) + ' V';
-
-			const status = getStatus(avg);
-			const elem = document.getElementById('batteryStatus');
-			elem.textContent = status;
-			elem.className = 'fs-4 ' + (status === 'Normal' ? 'text-success' : status === 'Warning' ? 'text-warning' : 'text-danger');
-		}
-
 		const ctx = document.getElementById('voltageChart').getContext('2d');
 		let voltageChart = createChart(chartType);
 
@@ -222,29 +162,91 @@
 			});
 		}
 
+		function getDateOfISOWeek(week, year) {
+			const simple = new Date(year, 0, 1 + (week - 1) * 7);
+			const dow = simple.getDay();
+			const ISOweekStart = simple;
+			if (dow <= 4) ISOweekStart.setDate(simple.getDate() - simple.getDay() + 1);
+			else ISOweekStart.setDate(simple.getDate() + 8 - simple.getDay());
+			return ISOweekStart;
+		}
+
+		function getStatus(voltage) {
+			if (voltage >= 60) return 'Normal';
+			if (voltage >= 45) return 'Warning';
+			return 'Critical';
+		}
+
+		function updateMetrics() {
+			const voltages = batteryData.map(d => d.voltage);
+			if (!voltages.length) return;
+
+			const avg = voltages.reduce((a, b) => a + b, 0) / voltages.length;
+			const max = Math.max(...voltages);
+			const min = Math.min(...voltages);
+
+			$('#avgVoltage').text(avg.toFixed(2) + ' V');
+			$('#maxVoltage').text(max.toFixed(2) + ' V');
+			$('#minVoltage').text(min.toFixed(2) + ' V');
+
+			const status = getStatus(avg);
+			const elem = $('#batteryStatus');
+			elem.text(status)
+				.removeClass('text-success text-warning text-danger')
+				.addClass(status === 'Normal' ? 'text-success' :
+						  status === 'Warning' ? 'text-warning' : 'text-danger');
+		}
+
 		function updateChart() {
 			voltageChart.data.labels = batteryData.map(d => d.day);
 			voltageChart.data.datasets[0].data = batteryData.map(d => d.voltage);
 			voltageChart.update();
 		}
 
-		document.getElementById('toggleChartType').addEventListener('click', () => {
+		function loadBatteryData(week) {
+			const [year, weekNum] = week.split('-W').map(Number);
+			const monday = getDateOfISOWeek(weekNum, year);
+			const sunday = new Date(monday);
+			sunday.setDate(monday.getDate() + 6);
+
+			const start = monday.toISOString().split('T')[0];
+			const end = sunday.toISOString().split('T')[0];
+
+			$.getJSON(`../api/user_fetch_battery_monitor.php?start=${start}&end=${end}`, function (data) {
+				if (data.error) {
+					console.error(data.error);
+					return;
+				}
+
+				batteryData = data.labels.map((day, i) => ({
+					day,
+					voltage: data.battery[i] ?? 0
+				}));
+
+				updateMetrics();
+				updateChart();
+			}).fail(function (xhr, status, err) {
+				console.error('AJAX error:', status, err);
+			});
+		}
+
+		$('#toggleChartType').on('click', function () {
 			chartType = chartType === 'bar' ? 'line' : 'bar';
 			voltageChart.destroy();
 			voltageChart = createChart(chartType);
 			updateChart();
-			document.getElementById('toggleChartType').textContent =
-				chartType === 'bar' ? 'Switch to Line' : 'Switch to Bar';
+			$(this).text(chartType === 'bar' ? 'Switch to Line' : 'Switch to Bar');
 		});
 
-		weekPicker.addEventListener('change', (e) => {
-			const week = e.target.value;
-			document.getElementById('chartTitle').textContent = `Battery Voltage per Day (V) — ${week}`;
+		$('#weekPicker').on('change', function () {
+			const week = $(this).val();
+			$('#chartTitle').text(`Battery Voltage per Day (V) — ${week}`);
 			loadBatteryData(week);
 		});
 
-		loadBatteryData(weekPicker.value);
+		$(document).ready(function () {
+			loadBatteryData($('#weekPicker').val());
+		});
 	</script>
 </body>
-
 </html>

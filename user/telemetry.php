@@ -25,8 +25,7 @@
             background: #fff;
         }
 
-        h3,
-        h5 {
+        h3, h5 {
             color: var(--primary);
             font-weight: bold;
             text-transform: uppercase;
@@ -67,7 +66,7 @@
             width: calc(100% - 250px);
         }
 
-        .sidebar.collapsed+#main {
+        .sidebar.collapsed + #main {
             margin-left: 80px;
             width: calc(100% - 80px);
         }
@@ -95,7 +94,9 @@
             margin-top: 8px;
         }
     </style>
+
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 </head>
 
 <body>
@@ -137,16 +138,18 @@
             <div class="col-md-2 mb-2">
                 <div class="card card-metric text-center p-3">
                     <h6 class="metric-label">Setup</h6>
-                    <button class="btn btn-primary btn-sm mt-2" data-bs-toggle="modal" data-bs-target="#setupModal">Set Installation Dates</button>
+                    <button class="btn btn-primary btn-sm mt-2" data-bs-toggle="modal" data-bs-target="#setupModal">
+                        Set Installation Dates
+                    </button>
                 </div>
             </div>
         </div>
 
+        <!-- Week Picker -->
         <div class="row mb-3">
             <div class="col-md-3">
                 <label for="weekPicker" class="form-label fw-bold text-primary">Select Week:</label>
                 <input type="week" id="weekPicker" class="form-control" value="2025-W42">
-                <!-- <div id="weekRangeLabel"></div> -->
             </div>
         </div>
 
@@ -194,7 +197,7 @@
         </div>
     </div>
 
-    <!-- Setup Modal -->
+    <!-- Modal -->
     <div class="modal fade" id="setupModal" tabindex="-1" aria-labelledby="setupModalLabel" aria-hidden="true">
         <div class="modal-dialog modal-lg">
             <div class="modal-content">
@@ -238,37 +241,6 @@
 
     <script>
         let charts = {};
-        const ctx = {
-            battery: document.getElementById('batteryChart').getContext('2d'),
-            vibration: document.getElementById('vibrationChart').getContext('2d'),
-            speed: document.getElementById('speedChart').getContext('2d'),
-            time: document.getElementById('timeChart').getContext('2d')
-        };
-
-        document.addEventListener('DOMContentLoaded', loadTelemetryData);
-        document.getElementById('weekPicker').addEventListener('change', loadTelemetryData);
-
-        function loadTelemetryData() {
-            const weekValue = document.getElementById('weekPicker').value;
-            const [year, week] = weekValue.split('-W');
-            const startDate = getWeekStartDate(year, week);
-            const endDate = new Date(startDate);
-            endDate.setDate(startDate.getDate() + 6);
-
-            const startStr = startDate.toISOString().split('T')[0];
-            const endStr = endDate.toISOString().split('T')[0];
-
-            // document.getElementById('weekRangeLabel').innerText =
-            //     `Week of ${startStr} to ${endStr}`;
-
-            fetch(`./telemetry_data.php?start=${startStr}&end=${endStr}`)
-                .then(res => res.json())
-                .then(data => {
-                    renderAllCharts(data);
-                    updateMetrics(data);
-                })
-                .catch(err => console.error('Error loading telemetry data:', err));
-        }
 
         function getWeekStartDate(year, week) {
             const simple = new Date(year, 0, 1 + (week - 1) * 7);
@@ -278,110 +250,93 @@
             return simple;
         }
 
-        function renderAllCharts(data) {
-            const chartsConfig = [{
-                    key: 'battery',
-                    label: 'Battery Voltage (V)',
-                    color: 'rgb(174,14,14)',
-                    unit: 'V',
-                    min: 30,
-                    max: 72
+        function loadTelemetryData() {
+            const weekValue = $('#weekPicker').val();
+            const [year, week] = weekValue.split('-W');
+            const startDate = getWeekStartDate(year, week);
+            const endDate = new Date(startDate);
+            endDate.setDate(startDate.getDate() + 6);
+
+            const startStr = startDate.toISOString().split('T')[0];
+            const endStr = endDate.toISOString().split('T')[0];
+
+            $.ajax({
+                url: '../api/user_fetch_telemetry_data.php',
+                method: 'GET',
+                data: { start: startStr, end: endStr },
+                dataType: 'json',
+                success: function(data) {
+                    renderAllCharts(data);
+                    updateMetrics(data);
                 },
-                {
-                    key: 'vibration',
-                    label: 'Motor Vibration (Hz)',
-                    color: 'rgb(14,14,174)',
-                    unit: 'Hz',
-                    min: 25,
-                    max: 100
-                },
-                {
-                    key: 'speed',
-                    label: 'Average Speed (km/h)',
-                    color: 'rgb(174,14,14)',
-                    unit: 'km/h',
-                    min: 0,
-                    max: 80
-                },
-                {
-                    key: 'time',
-                    label: 'Time Traveled (hours)',
-                    color: 'rgb(14,14,174)',
-                    unit: 'hrs',
-                    min: 0,
-                    max: 12
+                error: function(xhr, status, error) {
+                    console.error('Error fetching telemetry:', error);
                 }
+            });
+        }
+
+        function renderAllCharts(data) {
+            const configs = [
+                { key: 'battery', label: 'Battery Voltage (V)', color: 'rgb(174,14,14)', unit: 'V', min: 30, max: 72 },
+                { key: 'vibration', label: 'Motor Vibration (Hz)', color: 'rgb(14,14,174)', unit: 'Hz', min: 25, max: 100 },
+                { key: 'speed', label: 'Average Speed (km/h)', color: 'rgb(174,14,14)', unit: 'km/h', min: 0, max: 80 },
+                { key: 'time', label: 'Time Traveled (hours)', color: 'rgb(14,14,174)', unit: 'hrs', min: 0, max: 12 }
             ];
 
-            chartsConfig.forEach(item => {
-                const typeBtn = document.getElementById(`toggle${capitalize(item.key)}`);
-                const type = charts[item.key]?.config.type || 'bar';
-                const values = data[item.key];
+            configs.forEach(cfg => {
+                const ctx = document.getElementById(`${cfg.key}Chart`).getContext('2d');
+                const btn = $(`#toggle${cfg.key.charAt(0).toUpperCase() + cfg.key.slice(1)}`);
 
-                if (!charts[item.key]) {
-                    charts[item.key] = new Chart(ctx[item.key], {
-                        type,
-                        data: {
-                            labels: data.labels,
-                            datasets: [{
-                                label: item.label,
-                                data: values,
-                                backgroundColor: item.color.replace('rgb', 'rgba').replace(')', ',0.6)'),
-                                borderColor: item.color,
-                                borderWidth: 2,
-                                fill: true
-                            }]
-                        },
-                        options: {
-                            responsive: true,
-                            maintainAspectRatio: false,
-                            scales: {
-                                y: {
-                                    min: item.min,
-                                    max: item.max,
-                                    beginAtZero: false
-                                }
-                            },
-                            plugins: {
-                                tooltip: {
-                                    callbacks: {
-                                        label: function(context) {
-                                            return `${context.dataset.label}: ${context.raw} ${item.unit}`;
-                                        }
-                                    }
+                if (charts[cfg.key]) charts[cfg.key].destroy();
+
+                charts[cfg.key] = new Chart(ctx, {
+                    type: 'bar',
+                    data: {
+                        labels: data.labels,
+                        datasets: [{
+                            label: cfg.label,
+                            data: data[cfg.key],
+                            backgroundColor: cfg.color.replace('rgb', 'rgba').replace(')', ',0.6)'),
+                            borderColor: cfg.color,
+                            borderWidth: 2,
+                            fill: true
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        scales: { y: { min: cfg.min, max: cfg.max, beginAtZero: false } },
+                        plugins: {
+                            tooltip: {
+                                callbacks: {
+                                    label: ctx => `${ctx.dataset.label}: ${ctx.raw} ${cfg.unit}`
                                 }
                             }
                         }
-                    });
-                } else {
-                    charts[item.key].data.labels = data.labels;
-                    charts[item.key].data.datasets[0].data = values;
-                    charts[item.key].options.scales.y.min = item.min;
-                    charts[item.key].options.scales.y.max = item.max;
-                    charts[item.key].update();
-                }
+                    }
+                });
 
-                typeBtn.onclick = () => {
-                    const newType = charts[item.key].config.type === 'bar' ? 'line' : 'bar';
-                    charts[item.key].config.type = newType;
-                    charts[item.key].update();
-                    typeBtn.textContent = newType === 'bar' ? 'Bar' : 'Line';
-                };
+                btn.off('click').on('click', function() {
+                    const chart = charts[cfg.key];
+                    chart.config.type = chart.config.type === 'bar' ? 'line' : 'bar';
+                    chart.update();
+                    $(this).text(chart.config.type === 'bar' ? 'Bar' : 'Line');
+                });
             });
         }
 
         function updateMetrics(data) {
-            document.getElementById('batteryMetric').innerText = data.battery.length ? `${data.battery.at(-1)} V` : '--';
-            document.getElementById('vibrationMetric').innerText = data.vibration.length ? `${data.vibration.at(-1)} Hz` : '--';
-            document.getElementById('temperatureMetric').innerText = data.temperature.length ? `${data.temperature.at(-1)} °C` : '--';
-            document.getElementById('mileageMetric').innerText = data.speed.length ? `${data.speed.at(-1)} km/h` : '--';
-            document.getElementById('tireMetric').innerText = data.tire.length ? `${data.tire.at(-1)} PSI` : '--';
+            $('#batteryMetric').text(data.battery?.at(-1) ? `${data.battery.at(-1)} V` : '--');
+            $('#vibrationMetric').text(data.vibration?.at(-1) ? `${data.vibration.at(-1)} Hz` : '--');
+            $('#temperatureMetric').text(data.temperature?.at(-1) ? `${data.temperature.at(-1)} °C` : '--');
+            $('#mileageMetric').text(data.speed?.at(-1) ? `${data.speed.at(-1)} km/h` : '--');
+            $('#tireMetric').text(data.tire?.at(-1) ? `${data.tire.at(-1)} PSI` : '--');
         }
 
-        function capitalize(str) {
-            return str.charAt(0).toUpperCase() + str.slice(1);
-        }
+        $(document).ready(function() {
+            loadTelemetryData();
+            $('#weekPicker').on('change', loadTelemetryData);
+        });
     </script>
 </body>
-
 </html>
