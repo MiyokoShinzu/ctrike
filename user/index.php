@@ -1,4 +1,3 @@
-
 <?php include "./globals/head.php"; ?>
 
 <head>
@@ -92,56 +91,59 @@
 
     <?php include "./globals/scripts.php"; ?>
 
-    <script>
-        // 🧠 Display user greeting using email from localStorage
-        document.addEventListener("DOMContentLoaded", () => {
-           
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 
-            // Fetch telemetry data after greeting is displayed
-            fetch("./telemetry_data.php")
-                .then(res => res.json())
-                .then(data => {
+    <script>
+        $(document).ready(function() {
+
+            // 🧠 Fetch telemetry data from your API endpoint
+            $.ajax({
+                url: "../api/user_fetch_telemetry.php",
+                method: "GET",
+                dataType: "json",
+                success: function(data) {
                     renderTopMetrics(data);
                     renderCharts(data);
-                });
-        });
-
-        function renderTopMetrics(data) {
-            if (!data.labels || !data.labels.length) return;
-
-            const lastIndex = data.labels.length - 1;
-            const metrics = [{
-                    label: 'Battery',
-                    value: data.battery[lastIndex] !== null ? `${data.battery[lastIndex]} V` : '--',
-                    desc: 'Current voltage'
                 },
-                {
-                    label: 'Motor Status',
-                    value: 'Normal',
-                    desc: 'No vibration anomalies'
-                },
-                {
-                    label: 'Mileage',
-                    value: data.speed[lastIndex] !== null && data.time[lastIndex] !== null ?
-                        `${Math.round(data.speed[lastIndex] * data.time[lastIndex])} km` : '--',
-                    desc: 'Today’s distance'
-                },
-                {
-                    label: 'Temperature',
-                    value: data.temperature[lastIndex] !== null ? `${data.temperature[lastIndex]}°C` : '--',
-                    desc: 'Current sensor temp'
-                },
-                {
-                    label: 'Tire',
-                    value: 'OK',
-                    desc: 'Pressure stable'
+                error: function(xhr, status, error) {
+                    console.error("Error fetching telemetry:", error);
                 }
-            ];
+            });
 
-            const container = document.getElementById("topMetrics");
-            container.innerHTML = metrics
-                .map(
-                    (m) => `
+            function renderTopMetrics(data) {
+                if (!data.labels || !data.labels.length) return;
+
+                const lastIndex = data.labels.length - 1;
+                const metrics = [{
+                        label: 'Battery',
+                        value: data.battery[lastIndex] !== null ? `${data.battery[lastIndex]} V` : '--',
+                        desc: 'Current voltage'
+                    },
+                    {
+                        label: 'Motor Status',
+                        value: 'Normal',
+                        desc: 'No vibration anomalies'
+                    },
+                    {
+                        label: 'Mileage',
+                        value: data.speed[lastIndex] !== null && data.time[lastIndex] !== null ?
+                            `${Math.round(data.speed[lastIndex] * data.time[lastIndex])} km` : '--',
+                        desc: 'Today’s distance'
+                    },
+                    {
+                        label: 'Temperature',
+                        value: data.temperature[lastIndex] !== null ? `${data.temperature[lastIndex]}°C` : '--',
+                        desc: 'Current sensor temp'
+                    },
+                    {
+                        label: 'Tire',
+                        value: 'OK',
+                        desc: 'Pressure stable'
+                    }
+                ];
+
+                const $container = $("#topMetrics");
+                $container.html(metrics.map(m => `
                 <div class="col-md-2 col-6 mb-2">
                     <div class="card text-center p-3 shadow-sm card-fixed">
                         <h6>${m.label}</h6>
@@ -149,78 +151,72 @@
                         <small class="text-muted">${m.desc}</small>
                     </div>
                 </div>
-            `
-                )
-                .join("");
-        }
+            `).join(""));
+            }
 
-        function renderCharts(data) {
-            const charts = [{
-                    id: 'speedChart',
-                    label: 'Speed Trend (Last 7 Days)',
-                    values: data.speed,
-                    color: 'rgb(0,128,0)',
-                    min: 0,
-                    max: Math.max(...data.speed) + 10
-                },
-                {
-                    id: 'batteryChart',
-                    label: 'Battery Voltage (Last 7 Days)',
-                    values: data.battery,
-                    color: 'rgb(174,14,14)',
-                    min: 30,
-                    max: 72
-                }
-            ];
+            function renderCharts(data) {
+                const charts = [{
+                        id: 'speedChart',
+                        label: 'Speed Trend (Last 7 Days)',
+                        values: data.speed,
+                        color: 'rgb(0,128,0)',
+                        min: 0,
+                        max: Math.max(...data.speed) + 10
+                    },
+                    {
+                        id: 'batteryChart',
+                        label: 'Battery Voltage (Last 7 Days)',
+                        values: data.battery,
+                        color: 'rgb(174,14,14)',
+                        min: 30,
+                        max: 72
+                    }
+                ];
 
-            const container = document.getElementById("chartsContainer");
-            container.innerHTML = charts
-                .map(
-                    (c) => `
+                const $container = $("#chartsContainer");
+                $container.html(charts.map(c => `
                 <div class="col-lg-6 col-12 mb-3">
                     <div class="card shadow-sm p-3 chart-card">
                         <h5 class="text-primary mb-3">${c.label}</h5>
                         <canvas id="${c.id}"></canvas>
                     </div>
                 </div>
-            `
-                )
-                .join("");
+            `).join(""));
 
-            charts.forEach((c) => {
-                const validData = c.values.map((v) => (v !== null ? v : null));
-                new Chart(document.getElementById(c.id).getContext("2d"), {
-                    type: "line",
-                    data: {
-                        labels: data.labels,
-                        datasets: [{
-                            label: c.label,
-                            data: validData,
-                            borderColor: c.color,
-                            backgroundColor: c.color.replace("rgb", "rgba").replace(")", ",0.2)"),
-                            fill: true,
-                            tension: 0.3
-                        }]
-                    },
-                    options: {
-                        responsive: true,
-                        maintainAspectRatio: false,
-                        plugins: {
-                            legend: {
-                                display: false
-                            }
+                charts.forEach(c => {
+                    const ctx = document.getElementById(c.id).getContext("2d");
+                    new Chart(ctx, {
+                        type: "line",
+                        data: {
+                            labels: data.labels,
+                            datasets: [{
+                                label: c.label,
+                                data: c.values,
+                                borderColor: c.color,
+                                backgroundColor: c.color.replace("rgb", "rgba").replace(")", ",0.2)"),
+                                fill: true,
+                                tension: 0.3
+                            }]
                         },
-                        scales: {
-                            y: {
-                                min: c.min,
-                                max: c.max
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            plugins: {
+                                legend: {
+                                    display: false
+                                }
+                            },
+                            scales: {
+                                y: {
+                                    min: c.min,
+                                    max: c.max
+                                }
                             }
-                        },
-                        spanGaps: false
-                    }
+                        }
+                    });
                 });
-            });
-        }
+            }
+        });
     </script>
 </body>
 
