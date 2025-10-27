@@ -5,12 +5,10 @@
 		:root {
 			--primary: rgb(174, 14, 14);
 			--primary-light: rgb(220, 60, 60);
-			--accent: #ff904c;
 			--background: #fff7f7;
 			--text: #222;
 			--border-radius: 12px;
 			--box-shadow: 0 2px 12px rgba(174, 14, 14, 0.08);
-			--transition: 0.3s cubic-bezier(.25, .8, .25, 1);
 		}
 
 		body {
@@ -50,7 +48,7 @@
 		}
 
 		canvas {
-			height: 260px !important;
+			height: 240px !important;
 		}
 
 		.chart-header {
@@ -68,58 +66,74 @@
 	<?php include "./globals/navbar.php"; ?>
 
 	<div id="main" class="container-fluid py-4 mt-5">
-		<!-- Tire Stats Cards -->
+		<!-- Top Tire Summary -->
 		<div class="row mb-4">
 			<div class="col-md-4 mb-2">
-				<div class="card text-center p-3">
+				<div class="card text-center p-3 shadow-sm">
 					<h6>Average Pressure</h6>
 					<span id="avgPressure" class="fs-4 text-primary">-- PSI</span>
 				</div>
 			</div>
 			<div class="col-md-4 mb-2">
-				<div class="card text-center p-3">
+				<div class="card text-center p-3 shadow-sm">
 					<h6>Status</h6>
 					<span id="status" class="fs-4 text-success">Normal</span>
 				</div>
 			</div>
 			<div class="col-md-4 mb-2">
-				<div class="card text-center p-3">
+				<div class="card text-center p-3 shadow-sm">
 					<h6>Total Checks</h6>
 					<span id="checkCount" class="fs-4 text-primary">--</span>
 				</div>
 			</div>
 		</div>
 
-		<!-- Week Selector -->
+		<!-- Date Selector -->
 		<div class="row mb-3">
 			<div class="col-md-3">
-				<label for="weekPicker" class="form-label fw-bold text-primary">Select Week:</label>
-				<input type="week" id="weekPicker" class="form-control" value="2025-W43">
+				<label for="datePicker" class="form-label fw-bold text-primary">Select Date:</label>
+				<input type="date" id="datePicker" class="form-control" value="<?= date('Y-m-d') ?>">
 			</div>
 		</div>
 
-		<!-- Tire Pressure Chart -->
-		<div class="row mb-4">
-			<div class="col-12">
+		<!-- Tire Charts -->
+		<div class="row g-4">
+			<div class="col-md-4">
 				<div class="card shadow-sm p-3">
 					<div class="chart-header">
-						<h5 id="chartTitle" class="text-primary mb-0">Tire Pressure per Day (PSI)</h5>
-						<button class="btn btn-outline-primary btn-sm" id="toggleChartType">Switch to Line</button>
+						<h5 class="text-primary mb-0">Rear Tire Pressure</h5>
+						<button class="btn btn-outline-primary btn-sm toggle-type" data-chart="rear">Switch to Line</button>
 					</div>
-					<canvas id="tireChart"></canvas>
+					<canvas id="rearChart"></canvas>
+				</div>
+			</div>
+			<div class="col-md-4">
+				<div class="card shadow-sm p-3">
+					<div class="chart-header">
+						<h5 class="text-primary mb-0">Side Tire Pressure</h5>
+						<button class="btn btn-outline-primary btn-sm toggle-type" data-chart="side">Switch to Line</button>
+					</div>
+					<canvas id="sideChart"></canvas>
+				</div>
+			</div>
+			<div class="col-md-4">
+				<div class="card shadow-sm p-3">
+					<div class="chart-header">
+						<h5 class="text-primary mb-0">Front Tire Pressure</h5>
+						<button class="btn btn-outline-primary btn-sm toggle-type" data-chart="front">Switch to Line</button>
+					</div>
+					<canvas id="frontChart"></canvas>
 				</div>
 			</div>
 		</div>
 	</div>
 
 	<?php include "./globals/scripts.php"; ?>
-
+	<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 	<script>
-		let chartType = 'bar';
-		let tireChart;
-		let tireData = [];
+		let chartTypes = { rear: 'bar', side: 'bar', front: 'bar' };
+		let charts = {};
 
-		// --- Status Logic for Tricycle ---
 		function getStatus(p) {
 			if (p >= 32 && p <= 36) return 'Normal';
 			if ((p >= 28 && p < 32) || (p > 36 && p <= 38)) return 'Warning';
@@ -132,80 +146,17 @@
 			return 'text-danger';
 		}
 
-		function getDateRangeFromWeek(weekString) {
-			const [year, weekNum] = weekString.split('-W').map(Number);
-			const monday = new Date(year, 0, (weekNum - 1) * 7 + 1);
-			while (monday.getDay() !== 1) monday.setDate(monday.getDate() - 1);
-			const sunday = new Date(monday);
-			sunday.setDate(monday.getDate() + 6);
-			return {
-				start: monday.toISOString().split('T')[0],
-				end: sunday.toISOString().split('T')[0]
-			};
-		}
+		function createChart(canvasId, type, labels, data) {
+			const ctx = document.getElementById(canvasId).getContext('2d');
+			if (charts[canvasId]) charts[canvasId].destroy();
 
-		// --- Fetch Tire Data ---
-		async function loadTireData(weekValue) {
-			const {
-				start,
-				end
-			} = getDateRangeFromWeek(weekValue);
-			document.getElementById('chartTitle').textContent = `Tire Pressure per Day (PSI) — ${start} to ${end}`;
-
-			try {
-				const res = await fetch(`telemetry_data.php?start=${start}&end=${end}`);
-				const data = await res.json();
-
-				// Only map real data, skip empty entries
-				tireData = data.labels.map((day, i) => ({
-					day: day,
-					pressure: data.tire[i] != null ? parseFloat(data.tire[i]) : null
-				})).filter(d => d.pressure != null);
-
-				updateDashboard();
-				updateChart();
-			} catch (err) {
-				console.error("Error loading tire data:", err);
-				tireData = [];
-				updateDashboard();
-				updateChart();
-			}
-		}
-
-		// --- Update Summary Cards ---
-		function updateDashboard() {
-			if (!tireData.length) {
-				document.getElementById('avgPressure').textContent = '-- PSI';
-				document.getElementById('status').textContent = '--';
-				document.getElementById('status').className = 'fs-4';
-				document.getElementById('checkCount').textContent = '0';
-				return;
-			}
-
-			const avgPressure = (tireData.reduce((a, b) => a + b.pressure, 0) / tireData.length).toFixed(1);
-			document.getElementById('avgPressure').textContent = `${avgPressure} PSI`;
-			const status = getStatus(avgPressure);
-			const statusElem = document.getElementById('status');
-			statusElem.textContent = status;
-			statusElem.className = 'fs-4 ' + getColorClass(status);
-			document.getElementById('checkCount').textContent = tireData.length;
-		}
-
-		function updateChart() {
-			const ctx = document.getElementById('tireChart').getContext('2d');
-			if (tireChart) tireChart.destroy();
-
-			// Only include data points that are not null
-			const chartLabels = tireData.map(d => d.day);
-			const chartValues = tireData.map(d => d.pressure);
-
-			tireChart = new Chart(ctx, {
-				type: chartType,
+			charts[canvasId] = new Chart(ctx, {
+				type: type,
 				data: {
-					labels: chartLabels,
+					labels: labels,
 					datasets: [{
 						label: 'Pressure (PSI)',
-						data: chartValues.map(v => v ?? null), // keep nulls empty
+						data: data,
 						backgroundColor: 'rgba(174,14,14,0.6)',
 						borderColor: 'rgb(174,14,14)',
 						fill: true,
@@ -220,27 +171,64 @@
 							min: 28,
 							max: 38
 						}
-					},
-					spanGaps: false // ensures nulls are skipped, not plotted as zero
+					}
 				}
 			});
 		}
 
-		// --- Toggle Chart Type ---
-		document.getElementById('toggleChartType').addEventListener('click', () => {
-			chartType = chartType === 'bar' ? 'line' : 'bar';
-			document.getElementById('toggleChartType').textContent =
-				chartType === 'bar' ? 'Switch to Line' : 'Switch to Bar';
-			updateChart();
+		function updateDashboard(avgRear, avgSide, avgFront, count) {
+			const avgAll = ((avgRear + avgSide + avgFront) / 3).toFixed(2);
+			const status = getStatus(avgAll);
+
+			$('#avgPressure').text(avgAll + ' PSI');
+			$('#status').text(status)
+				.removeClass('text-success text-warning text-danger')
+				.addClass(getColorClass(status));
+			$('#checkCount').text(count);
+		}
+
+		function loadTireData(selectedDate) {
+			$.ajax({
+				url: '../api/user_fetch_tire_condition.php',
+				method: 'GET',
+				data: { date: selectedDate },
+				dataType: 'json',
+				success: function(data) {
+					const labels = data.labels || [];
+					const rear = data.rear || [];
+					const side = data.side || [];
+					const front = data.front || [];
+
+					createChart('rearChart', chartTypes.rear, labels, rear);
+					createChart('sideChart', chartTypes.side, labels, side);
+					createChart('frontChart', chartTypes.front, labels, front);
+
+					const avgRear = rear.length ? rear.reduce((a, b) => a + b, 0) / rear.length : 0;
+					const avgSide = side.length ? side.reduce((a, b) => a + b, 0) / side.length : 0;
+					const avgFront = front.length ? front.reduce((a, b) => a + b, 0) / front.length : 0;
+
+					updateDashboard(avgRear, avgSide, avgFront, labels.length);
+				},
+				error: function(xhr, status, error) {
+					console.error('Error loading tire data:', error);
+				}
+			});
+		}
+
+		// --- Toggle individual chart type ---
+		$('.toggle-type').on('click', function() {
+			const chartKey = $(this).data('chart');
+			chartTypes[chartKey] = chartTypes[chartKey] === 'bar' ? 'line' : 'bar';
+			$(this).text(chartTypes[chartKey] === 'bar' ? 'Switch to Line' : 'Switch to Bar');
+			loadTireData($('#datePicker').val());
 		});
 
-		// --- Week Change ---
-		document.getElementById('weekPicker').addEventListener('change', (e) => {
-			loadTireData(e.target.value);
+		$('#datePicker').on('change', function() {
+			loadTireData($(this).val());
 		});
 
-		// --- Initial Load ---
-		loadTireData(document.getElementById('weekPicker').value);
+		// Initial Load
+		loadTireData($('#datePicker').val());
 	</script>
 </body>
 
