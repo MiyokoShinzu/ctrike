@@ -10,7 +10,7 @@
 			<?php
 			include '../src/connection.php';
 
-			$sql = 'Select voltage from telemetry_data where vehicle_id = "' . $vehicle_id . '" order by datetime_received DESC';
+			$sql = 'Select voltage, temperature from telemetry_data where vehicle_id = "' . $vehicle_id . '" order by datetime_received DESC';
 			$result = $mysqli->query($sql);
 			$data = array();
 			while ($row = $result->fetch_assoc()) {
@@ -19,6 +19,7 @@
 			$sum = 0;
 			$latest = $data[0]['voltage'];
 			$previous = $data[1]['voltage'];
+			$temp_latest = $data[0]['temperature'];
 			$difference = $latest - $previous;
 			$percentage_change = ($difference / $previous) * 100;
 			for ($i = 0; $i < count($data); $i++) {
@@ -52,6 +53,32 @@
 			</div>
 			<div class="col-lg-9 mb-3  p-3">
 				<div class="row">
+					<div class="col-5 border rounded shadow p-2 border-dark border-2" style="scale: 1;">
+						<h4 class="">Battery</h4>
+						<div class="row  g-3 mt-2">
+
+							<div class="col-6 mx-auto p-3   border d-flex  justify-content-center align-items-center  flex-column">
+								<p style="font-size: 1.9em; "><?php echo $average; ?> V</p>
+								<small style="font-size: 0.8em; color: var(--bs-secondary);" class="mb-3">Average for last 10 readings</small>
+								<h5 class="badge bg-primary  text-center p-2 ">Average Voltage</h5>
+							</div>
+							<div class="col-5 mx-auto p-3  border  d-flex  justify-content-center align-items-center  flex-column">
+								<p style="font-size: 1.9em; "><?php echo $difference; ?> V</p>
+								<small style="font-size: 0.8em; color: var(--bs-secondary);" class="mb-3">Latest - Previous Reading</small>
+								<h5 class="badge bg-info p-2  text-center ">Voltage Difference</h5>
+							</div>
+							<div class="col-6 mx-auto p-3   border d-flex  justify-content-center align-items-center  flex-column">
+								<p style="font-size: 1.9em; "><?php echo $age; ?></p>
+								<small style="font-size: 0.8em; color: var(--bs-secondary);" class="mb-3">From last installation date</small>
+								<h5 class="badge bg-success p-2 text-center  ">Component Age</h5>
+							</div>
+							<div class="col-5 mx-auto p-3   border d-flex  justify-content-center align-items-center  flex-column">
+								<p style="font-size: 1.9em; "><?php echo $temp_latest; ?> °C</p>
+								<small style="font-size: 0.8em; color: var(--bs-secondary);" class="mb-3">Latest Reading</small>
+								<h5 class="badge  p-2 text-center  " style="background: var(--bs-purple)">Temperature</h5>
+							</div>
+						</div>
+					</div>
 					<div class="col-6 ">
 						<h4 class="border-0 border-bottom border-secondary border-3 p-3">Battery</h4>
 						<div class="row  gx-1 mt-3">
@@ -75,6 +102,7 @@
 					</div>
 				</div>
 			</div>
+
 
 		</div>
 	</div>
