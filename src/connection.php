@@ -2,7 +2,7 @@
 $servername = "localhost";
 $username = "root"; // Change username
 $password = ""; // Change password
-$dbname = "ctrike_new"; // Change database name
+$dbname = "ctrike"; // Change database name
 
 $mysqli = new mysqli($servername, $username, $password, $dbname);
 
