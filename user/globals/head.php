@@ -3,10 +3,13 @@
 
 <head>
     <meta charset="UTF-8" />
-    <title>Admin</title>
+    <title>User</title>
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <?php
     session_start();
+    $fullname = $_SESSION['fullname'];
+    $contact = $_SESSION['contact'];
+    $vehicle_id = $_SESSION['vehicle_id'];
     if (!isset($_SESSION['access']) || $_SESSION['access'] !== '1') {
         header("Location: ../login/");
         exit();
