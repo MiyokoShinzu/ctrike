@@ -18,7 +18,7 @@ $stmt = $mysqli->prepare("
     FROM telemetry_data
     WHERE vehicle_id = ?
       AND DATE(datetime_received) = ?
-    ORDER BY datetime_received ASC
+    ORDER BY datetime_received DESC LIMIT 1
 ");
 $stmt->bind_param("ss", $uuid, $start);
 $stmt->execute();
