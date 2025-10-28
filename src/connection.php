@@ -1,5 +1,5 @@
 <?php
-$servername = "localhost";
+$servername = "153.92.15.84";
 $username = "u148988291_ctrike"; // Change username
 $password = "CTRIKE21ab."; // Change password
 $dbname = "u148988291_ctrike"; // Change database name
