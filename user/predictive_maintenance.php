@@ -139,7 +139,7 @@
 
 						</div>
 
-						<h4 class="text-center text-dark">Motor Vibration</h4>
+						<h4 class="text-center text-dark mt-3">Motor Vibration</h4>
 						<div class="row  g-1 mt-2">
 
 							<div class="col-4 mx-auto p-3   border d-flex  justify-content-center align-items-center  flex-column">
