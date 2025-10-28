@@ -49,6 +49,9 @@
 					<div class="col-12 mx-auto mb-1 p-1">
 						<span style="font-size: 0.9em; padding: 1px; display: flex; align-items: center; justify-content: start; " class=" m-0 alert-light"> <i class="bi bi-exclamation-circle-fill me-2 text-danger" style="font-size: 1.4em;"></i>Front Tire is low in pressure for the last 10 days. Maintenance is needed. Message sent to <p class="badge bg-success mx-2 mb-0"><?php echo $fullname; ?></p> with contact number <p class=" ms-2 badge bg-primary mb-0"><?php echo $contact; ?>.</p></span>
 					</div>
+					<div class="col-12 mx-auto mb-1 p-1">
+						<span style="font-size: 0.9em; padding: 1px; display: flex; align-items: center; justify-content: start; " class=" m-0 alert-light"> <i class="bi bi-exclamation-circle-fill me-2 text-danger" style="font-size: 1.4em;"></i>Abnormal motor vibration detected. Maintenance is needed. Message sent to <p class="badge bg-success mx-2 mb-0"><?php echo $fullname; ?></p> with contact number <p class=" ms-2 badge bg-primary mb-0"><?php echo $contact; ?>.</p></span>
+					</div>
 				</div>
 			</div>
 			<div class="col-lg-9 mb-3  p-3">
@@ -97,10 +100,10 @@
 					$latest_front_tire_pressure = $data[0]['front_tire_pressure'];
 					$latest_side_tire_pressure = $data[0]['side_tire_pressure'];
 					$latest_rear_tire_pressure = $data[0]['rear_tire_pressure'];
-					
-					
-				
-				
+
+
+
+
 
 					$sql = 'Select * from components_changes where vehicle_id = "' . $vehicle_id . '" and component_name = "Front Tire" order by datetime_change DESC LIMIT 1';
 					$result = $mysqli->query($sql);
@@ -133,7 +136,7 @@
 								<small style="font-size: 0.7em; color: var(--bs-secondary);" class="mb-3">Latest Reading</small>
 								<h5 class="badge bg-secondary p-2 text-center  ">Side Tire</h5>
 							</div>
-						
+
 						</div>
 					</div>
 
