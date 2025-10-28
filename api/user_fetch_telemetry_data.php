@@ -18,7 +18,7 @@ $stmt = $mysqli->prepare("
     FROM telemetry_data
     WHERE vehicle_id = ?
       AND DATE(datetime_received) = ?
-    ORDER BY datetime_received DESC LIMIT 1
+    ORDER BY datetime_received DESC LIMIT 12
 ");
 $stmt->bind_param("ss", $uuid, $start);
 $stmt->execute();
@@ -51,4 +51,3 @@ echo json_encode([
     "tire" => $tire,
     "time" => $time
 ]);
-?>
