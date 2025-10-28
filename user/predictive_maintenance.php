@@ -58,12 +58,12 @@
 						<div class="row  g-3 mt-2">
 
 							<div class="col-6 mx-auto p-3   border d-flex  justify-content-center align-items-center  flex-column">
-								<p style="font-size: 1.9em; "><?php echo $average; ?> V</p>
+								<p style="font-size: 1.9em; "><?php echo number_format($average, 1); ?> V</p>
 								<small style="font-size: 0.7em; color: var(--bs-secondary);" class="mb-3">Average for last 10 readings</small>
 								<h5 class="badge bg-primary  text-center p-2 ">Average Voltage</h5>
 							</div>
 							<div class="col-5 mx-auto p-3  border  d-flex  justify-content-center align-items-center  flex-column">
-								<p style="font-size: 1.9em; "><?php echo $difference; ?> V</p>
+								<p style="font-size: 1.9em; "><?php echo number_format($difference, 1); ?> V</p>
 								<small style="font-size: 0.7em; color: var(--bs-secondary);" class="mb-3">Latest - Previous Reading</small>
 								<h5 class="badge bg-info p-2  text-center ">Voltage Difference</h5>
 							</div>
