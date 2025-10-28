@@ -70,13 +70,13 @@
 			<div class="col-md-4 mb-2">
 				<div class="card text-center p-3 shadow-sm">
 					<h6>Average Vibration</h6>
-					<span id="avgVibration" class="fs-4">-- Hz</span>
+					<span id="avgVibration" class="fs-4">-- mm/sec</span>
 				</div>
 			</div>
 			<div class="col-md-4 mb-2">
 				<div class="card text-center p-3 shadow-sm">
 					<h6>Max Vibration</h6>
-					<span id="maxVibration" class="fs-4">-- Hz</span>
+					<span id="maxVibration" class="fs-4">-- mm/sec</span>
 				</div>
 			</div>
 			<div class="col-md-4 mb-2">
@@ -100,7 +100,7 @@
 			<div class="col-12">
 				<div class="card shadow-sm p-3">
 					<div class="chart-header">
-						<h5 id="chartTitle" class="text-primary mb-0">Motor Vibration (Hz) — <?= date('Y-m-d') ?></h5>
+						<h5 id="chartTitle" class="text-primary mb-0">Motor Vibration (mm/sec) — <?= date('Y-m-d') ?></h5>
 						<button class="btn btn-outline-primary btn-sm" id="toggleChartType">Switch to Line</button>
 					</div>
 					<canvas id="vibrationChart"></canvas>
@@ -135,7 +135,7 @@
 					data: {
 						labels: labels,
 						datasets: [{
-							label: 'Vibration (Hz) [Min: 25, Max: 100]',
+							label: 'Vibration (mm/sec) [Min: 25, Max: 100]',
 							data: data,
 							backgroundColor: 'rgba(14,14,174,0.6)',
 							borderColor: 'rgb(14,14,174)',
@@ -164,8 +164,8 @@
 				const max = vibrationData.length ? Math.max(...vibrationData) : 0;
 				const status = getStatus(avg);
 
-				$('#avgVibration').text(avg.toFixed(2) + ' Hz');
-				$('#maxVibration').text(max.toFixed(2) + ' Hz');
+				$('#avgVibration').text(avg.toFixed(2) + ' mm/sec');
+				$('#maxVibration').text(max.toFixed(2) + ' mm/sec');
 				$('#status')
 					.text(status)
 					.removeClass('text-success text-warning text-danger')
@@ -176,7 +176,7 @@
 			}
 
 			function loadDailyData(selectedDate) {
-				$('#chartTitle').text(`Motor Vibration (Hz) — ${selectedDate}`);
+				$('#chartTitle').text(`Motor Vibration (mm/sec) — ${selectedDate}`);
 
 				$.ajax({
 					url: '../api/user_fetch_motor_vibration.php',

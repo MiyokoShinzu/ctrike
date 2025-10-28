@@ -164,7 +164,7 @@
             <div class="col-md-6 mb-3">
                 <div class="card shadow-sm p-3">
                     <h5 class="text-primary mb-3">
-                        Motor Vibration (G)
+                        Motor Vibration (mm/sec)
                         <button class="btn btn-outline-primary btn-sm toggle-btn" id="toggleVibration">Bar</button>
                     </h5>
                     <canvas id="vibrationChart"></canvas>
@@ -298,7 +298,7 @@
                 },
                 {
                     key: 'vibration',
-                    label: 'Motor Vibration (G)',
+                    label: 'Motor Vibration (mm/sec)',
                     color: 'rgb(14,14,174)',
                     unit: 'G',
                     min: 25,
