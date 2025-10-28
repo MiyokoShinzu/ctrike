@@ -349,7 +349,7 @@
 
         function updateMetrics(data) {
             $('#batteryMetric').text(data.battery?.at(-1) ? `${data.battery.at(-1).toFixed(2)} V` : '--');
-            $('#vibrationMetric').text(data.vibration?.at(-1) ? `${data.vibration.at(-1).toFixed(2)} G` : '--');
+            $('#vibrationMetric').text(data.vibration?.at(-1) ? `${data.vibration.at(-1).toFixed(2)} mm/sec` : '--');
             $('#temperatureMetric').text(data.temperature?.at(-1) ? `${data.temperature.at(-1).toFixed(2)} °C` : '--');
             $('#mileageMetric').text(data.speed?.at(-1) ? `${data.speed.at(-1).toFixed(2)} km/h` : '--');
             $('#tireMetric').text(data.tire?.at(-1) ? `${data.tire.at(-1).toFixed(2)} PSI` : '--');
