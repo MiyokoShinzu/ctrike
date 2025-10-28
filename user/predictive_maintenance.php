@@ -143,7 +143,7 @@
 						<div class="row  g-1 mt-2">
 
 							<div class="col-4 mx-auto p-3   border d-flex  justify-content-center align-items-center  flex-column">
-								<p style="font-size: 1.4em; ">0.06 G</p>
+								<p style="font-size: 1.4em; ">4.5 mm/sec</p>
 								<small style="font-size: 0.7em; color: var(--bs-secondary);" class="mb-3">Latest Reading</small>
 								<h5 class="badge bg-primary  text-center p-2 ">Average Vibration</h5>
 							</div>
