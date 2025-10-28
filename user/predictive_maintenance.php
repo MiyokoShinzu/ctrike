@@ -140,6 +140,17 @@
 						</div>
 					</div>
 
+					<div class="col-6 border mx-auto  rounded shadow p-3  border-light" style="scale: 1;">
+						<h4 class="text-center text-dark">Motor Vibration</h4>
+						<div class="row  g-1 mt-2">
+
+							<div class="col-4 mx-auto p-3   border d-flex  justify-content-center align-items-center  flex-column">
+								<p style="font-size: 1.4em; ">0.06 G</p>
+								<small style="font-size: 0.7em; color: var(--bs-secondary);" class="mb-3">Latest Reading</small>
+								<h5 class="badge bg-primary  text-center p-2 ">Average Vibration</h5>
+							</div>
+						</div>
+					</div>
 				</div>
 			</div>
 
