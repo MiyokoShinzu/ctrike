@@ -261,7 +261,7 @@
     </div>
 
     <?php include "./globals/scripts.php"; ?>
-	<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 
     <script>
         let charts = {};
@@ -298,9 +298,9 @@
                 },
                 {
                     key: 'vibration',
-                    label: 'Motor Vibration (Hz)',
+                    label: 'Motor Vibration (G)',
                     color: 'rgb(14,14,174)',
-                    unit: 'Hz',
+                    unit: 'G',
                     min: 25,
                     max: 100
                 },
