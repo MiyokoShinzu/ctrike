@@ -1,6 +1,10 @@
 <?php
 header('Content-Type: application/json');
+session_start();
 include_once "../src/connection.php"; // uses $mysqli
+
+// Optional: handle session-based UUID (adjust as needed)
+$uuid = $_SESSION['vehicle_id'] ?? 1; // fallback for testing
 
 // Prepare SQL query safely
 $stmt = $mysqli->prepare("
@@ -14,6 +18,7 @@ $stmt = $mysqli->prepare("
         vibration,
         datetime_received
     FROM telemetry_data
+    WHERE vehicle_id = ?
     ORDER BY datetime_received ASC
     LIMIT 7
 ");

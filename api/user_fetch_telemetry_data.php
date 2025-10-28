@@ -3,7 +3,7 @@ header('Content-Type: application/json');
 session_start();
 include_once "../src/connection.php";
 
-$uuid = $_SESSION['uuid'] ?? 1;
+$uuid = $_SESSION['vehicle_id'] ?? 1;
 $start = $_GET['start'] ?? '';
 $end = $_GET['end'] ?? '';
 
@@ -16,7 +16,7 @@ $stmt = $mysqli->prepare("
     SELECT rear_tire_pressure, side_tire_pressure, front_tire_pressure,
            voltage, temperature, distance, vibration, datetime_received
     FROM telemetry_data
-    WHERE uuid = ?
+    WHERE vehicle_id = ?
       AND DATE(datetime_received) = ?
     ORDER BY datetime_received ASC
 ");
