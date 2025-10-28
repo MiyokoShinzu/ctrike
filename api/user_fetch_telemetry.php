@@ -19,8 +19,7 @@ $stmt = $mysqli->prepare("
         datetime_received
     FROM telemetry_data
     WHERE vehicle_id = ?
-    ORDER BY datetime_received ASC
-    LIMIT 7
+    ORDER BY datetime_received DESC LIMIT 1
 ");
 
 if (!$stmt) {
