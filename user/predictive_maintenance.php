@@ -138,9 +138,7 @@
 							</div>
 
 						</div>
-					</div>
 
-					<div class="col-6 border mx-auto  rounded shadow p-3  border-light" style="scale: 1;">
 						<h4 class="text-center text-dark">Motor Vibration</h4>
 						<div class="row  g-1 mt-2">
 
